@@ -3,8 +3,7 @@ Easy to use, python implementation of a brdf correction to hyperspectral data.
 
 Based on Colgen, et al. 2012 (https://doi.org/10.3390/rs4113462).  Li-dense + Ross-thick models.
 
-
-
+#j
 
 
 Ross-thin (LAI << 1). Thus, the modeled surface reflectance R was computed for each band as:
