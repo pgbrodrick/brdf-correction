@@ -41,12 +41,12 @@ def correction_components(solar_zenith_deg, sensor_zenith_deg, sensor_azimuth_de
 
     sec_Tv = 1/np.cos(sensor_zenith_rad_p)
     sec_Ts = 1/np.cos(solar_zenith_rad_p)
-    tan_Tv = 1/np.tan(sensor_zenith_rad_p)
-    tan_Ts = 1/np.tan(solar_zenith_rad_p)
-    cos_Tv = 1/np.cos(sensor_zenith_rad_p)
-    cos_Ts = 1/np.cos(solar_zenith_rad_p)
-    sin_Tv = 1/np.sin(sensor_zenith_rad_p)
-    sin_Ts = 1/np.sin(solar_zenith_rad_p)
+    tan_Tv = np.tan(sensor_zenith_rad_p)
+    tan_Ts = np.tan(solar_zenith_rad_p)
+    cos_Tv = np.cos(sensor_zenith_rad_p)
+    cos_Ts = np.cos(solar_zenith_rad_p)
+    sin_Tv = np.sin(sensor_zenith_rad_p)
+    sin_Ts = np.sin(solar_zenith_rad_p)
 
     cos_p = np.cos(relative_azimuth)
     sin_p = np.sin(relative_azimuth)
@@ -64,9 +64,9 @@ def correction_components(solar_zenith_deg, sensor_zenith_deg, sensor_azimuth_de
     cos_xi_prime = cos_Ts*cos_Tv + sin_Ts*sin_Tv*cos_p
 
 
-    F_1 = ((1. + cos_xi_prime) * 1./np.cos(sensor_zenith_rad_p) * 1./np.cos(solar_zenith_rad_p)) \
-          /(1./np.cos(sensor_zenith_rad_p) + 1./np.cos(solar_zenith_rad_p) - V) \
-          -2
+    #F_1 = ((1. + cos_xi_prime) * 1./np.cos(sensor_zenith_rad_p) * 1./np.cos(solar_zenith_rad_p)) \
+    #      /(1./np.cos(sensor_zenith_rad_p) + 1./np.cos(solar_zenith_rad_p) - V) \
+    #      -2
     F_1 = (1+cos_xi_prime)*sec_Tv*sec_Ts / (sec_Tv + sec_Ts - V) - 2
 
     cos_xi = np.cos(solar_zenith_rad)*np.cos(sensor_zenith_rad) + np.sin(solar_zenith_rad)*np.sin(sensor_zenith_rad)*np.cos(relative_azimuth)
@@ -120,8 +120,8 @@ def apply_brdf_model(coef, refl, relobs, tch, shade):
     for _class in range(n_classes):
         subset = roughclass == _class
         for _band in range(n_bands):
-            modeled_r = coef[_class,_band,0] + F_1[subset] * coef[_class,_band,1] * F_2[subset]*coef[_class,_band,2]
-            ref_r = coef[_class,_band,0] + refF_1[subset] * coef[_class,_band,1] * refF_2[subset]*coef[_class,_band,2]
+            modeled_r = coef[_class,_band,0] + F_1[subset] * coef[_class,_band,1] + F_2[subset]*coef[_class,_band,2]
+            ref_r = coef[_class,_band,0] + refF_1[subset] * coef[_class,_band,1] + refF_2[subset]*coef[_class,_band,2]
             correction = refl[subset,_band] * ref_r / modeled_r
             correction[np.isnan(correction)] = 0
             refl[subset,_band] = correction
