@@ -69,8 +69,9 @@ def correction_components(solar_zenith_deg, sensor_zenith_deg, sensor_azimuth_de
           -2
     F_1 = (1+cos_xi_prime)*sec_Tv*sec_Ts / (sec_Tv + sec_Ts - V) - 2
 
+    cos_xi = np.cos(solar_zenith_rad)*np.cos(sensor_zenith_rad) + np.sin(solar_zenith_rad)*np.sin(sensor_zenith_rad)*np.cos(relative_azimuth)
     #F_2 = 4/(3*np.pi) * 1./(np.cos(solar_zenith_rad_p) + np.cos(sensor_zenith_rad_p)) * ( (np.pi/2. - np.arccos(cos_xi_prime)) * cos_xi_prime + np.sin(np.arccos(cos_xi_prime))) - 1./3.
-    F_2 = 4/(3*np.pi) * 1./(np.sin(solar_zenith_rad) + np.cos(sensor_zenith_rad)) * ( (np.pi/2. - np.arccos(cos_xi_prime)) * cos_xi_prime + np.sin(np.arccos(cos_xi_prime))) - 1./3.
+    F_2 = 4/(3*np.pi) * 1./(np.sin(solar_zenith_rad) + np.cos(sensor_zenith_rad)) * ( (np.pi/2. - np.arccos(cos_xi)) * cos_xi + np.sin(np.arccos(cos_xi))) - 1./3.
 
 
     return F_1, F_2
