@@ -40,11 +40,12 @@ def correction_components(solar_zenith_deg, sensor_zenith_deg, sensor_azimuth_de
     sensor_zenith_rad_p = theta_prime(sensor_zenith_rad)
 
     D = np.sqrt(np.power(np.tan(solar_zenith_rad_p),2) + np.power(np.tan(sensor_zenith_rad_p),2) - 2*np.tan(sensor_zenith_rad_p)*np.tan(solar_zenith_rad_p)*np.cos(relative_azimuth))
-    cos_t = h_over_b * np.sqrt(np.power(D,2) + np.tan(solar_zenith_rad_p) * np.tan(sensor_zenith_rad_p) * np.sin(relative_azimuth)) / (1/np.cos(solar_zenith_rad_p) + 1/np.cos(sensor_zenith_rad_p))
+    cos_t = h_over_b * np.sqrt(np.power(D,2) + np.power(np.tan(solar_zenith_rad_p) * np.tan(sensor_zenith_rad_p) * np.sin(relative_azimuth),2)) / (1/np.cos(solar_zenith_rad_p) + 1/np.cos(sensor_zenith_rad_p))
     t = np.arccos(cos_t)
     V = 1/np.pi * (t - np.sin(t)*cos_t) * (1./np.cos(sensor_zenith_rad_p) + 1./np.cos(solar_zenith_rad_p))
     cos_xi_prime = np.cos(solar_zenith_rad_p)*np.cos(sensor_zenith_rad_p) + np.sin(solar_zenith_rad_p) * np.sin(sensor_zenith_rad_p) * np.cos(relative_azimuth)
 
+    import ipdb; ipdb.set_trace()
     F_1 = ((1. + cos_xi_prime) * 1./np.cos(sensor_zenith_rad_p) * 1./np.cos(solar_zenith_rad_p)) \
           /(1./np.cos(sensor_zenith_rad_p) + 1./np.cos(solar_zenith_rad_p) - V) \
           -2
@@ -60,7 +61,7 @@ def generate_coeff_table(refl, tch, shade, relobs):
     for _class in range(n_classes):
         subset = roughclass == _class
         for _band in range(n_bands):
-            coeff_mat[_class,_band,:] + calculate_coefficients(refl[subset,_band], relobs)
+            coeff_mat[_class,_band,:] + calculate_coefficients(refl[subset,_band], relobs[subset,:])
 
     return coeff_mat
 
@@ -73,6 +74,7 @@ def calculate_coefficients(refl, relobs):
 
     A = np.transpose(np.vstack([np.ones(F_1.shape), F_1, F_2]))
 
+    import ipdb; ipdb.set_trace()
     coeff = np.linalg.lstsq(A, refl)
     return coeff
 
