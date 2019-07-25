@@ -43,7 +43,7 @@ def correction_components(solar_zenith_deg, sensor_zenith_deg, sensor_azimuth_de
     cos_t = h_over_b * np.sqrt(np.power(D,2) + np.tan(solar_zenith_rad_p) * np.tan(sensor_zenith_rad_p) * np.sin(relative_azimuth)) / (1/np.cos(solar_zenith_rad_p) + 1/np.cos(sensor_zenith_rad_p))
     t = np.arccos(cos_t)
     V = 1/np.pi * (t - np.sin(t)*cos_t) * (1./np.cos(sensor_zenith_rad_p) + 1./np.cos(solar_zenith_rad_p))
-    cos_xi_prime = np.cos(solar_zenith_rad_p)*np.cos(sensor_zenith_rad_p) + np.sin(solar_zenith_rad_p) * np.sine(sensor_zenith_rad_p) * np.cos(relative_azimuth)
+    cos_xi_prime = np.cos(solar_zenith_rad_p)*np.cos(sensor_zenith_rad_p) + np.sin(solar_zenith_rad_p) * np.sin(sensor_zenith_rad_p) * np.cos(relative_azimuth)
 
     F_1 = ((1. + cos_xi_prime) * 1./np.cos(sensor_zenith_rad_p) * 1./np.cos(solar_zenith_rad_p)) \
           /(1./np.cos(sensor_zenith_rad_p) + 1./np.cos(solar_zenith_rad_p) - V) \
@@ -106,7 +106,7 @@ def apply_brdf_model(coef, refl, relobs, tch, shade):
 
 
 
-
+np.random.seed(13)
 
 parser = argparse.ArgumentParser(description='Perform BRDF correction on mosaic')
 parser.add_argument('reflectance_file')
@@ -123,22 +123,22 @@ obs_set = gdal.Open(args.obs_file,gdal.GA_ReadOnly)
 tch_set = gdal.Open(args.tch_file,gdal.GA_ReadOnly)
 shade_set = gdal.Open(args.shade_file,gdal.GA_ReadOnly)
 
-perm = np.random.permutation((refl_set.RasterYSize,refl_set.RasterXSize))
+perm = np.random.permutation((refl_set.RasterYSize*refl_set.RasterXSize)).reshape((refl_set.RasterYSize,refl_set.RasterXSize))
 num_samples = 1000
-matrix_subset = perm <= num_samples
+matrix_subset = perm < num_samples
 del perm
 
 refl = np.zeros((num_samples, refl_set.RasterCount))
 obs = np.zeros((num_samples, obs_set.RasterCount))
-tch = np.zeros((num_samples, tch_set.RasterCount))
-shade = np.zeros((num_samples, shade_set.RasterCount))
+tch = np.zeros((num_samples))
+shade = np.zeros((num_samples))
 
 _ind = 0
-for _row in tqdm(range(refl_set.RasterYSize)):
+for _row in tqdm(range(refl_set.RasterYSize),ncols=80):
     if (np.sum(matrix_subset[_row,:]) > 0):
-        loc_tch = np.transpose(np.squeeze(tch_set.ReadAsArray(0,_row,tch_set.RasterXSize,1))[:, matrix_subset[_row]])
+        loc_tch = np.transpose(np.squeeze(tch_set.ReadAsArray(0,_row,tch_set.RasterXSize,1))[ matrix_subset[_row,:]])
         loc_refl = np.transpose(np.squeeze(refl_set.ReadAsArray(0,_row,refl_set.RasterXSize,1))[:, matrix_subset[_row,:]])
-        loc_shade = np.transpose(np.squeeze(shade_set.ReadAsArray(0,_row,shade_set.RasterXSize,1))[:, matrix_subset[_row]])
+        loc_shade = np.transpose(np.squeeze(shade_set.ReadAsArray(0,_row,shade_set.RasterXSize,1))[matrix_subset[_row,:]])
         loc_obs = np.transpose(np.squeeze(obs_set.ReadAsArray(0,_row,obs_set.RasterXSize,1))[:, matrix_subset[_row,:]])
 
         tch[_ind:_ind+len(loc_tch)] = loc_tch
