@@ -34,7 +34,7 @@ def correction_components(solar_zenith_deg, sensor_zenith_deg, sensor_azimuth_de
 
     solar_zenith_rad = solar_zenith_deg * np.pi/180.
     sensor_zenith_rad = sensor_zenith_deg * np.pi/180.
-    relative_azimuth = (sensor_azimuth_deg - solar_azimuth_deg) * np.pi/180.
+    relative_azimuth = (solar_azimuth_deg - sensor_azimuth_deg) * np.pi/180.
 
     solar_zenith_rad_p = theta_prime(solar_zenith_rad)
     sensor_zenith_rad_p = theta_prime(sensor_zenith_rad)
