@@ -46,7 +46,6 @@ def correction_components(solar_zenith_deg, sensor_zenith_deg, sensor_azimuth_de
     V = 1/np.pi * (t - np.sin(t)*cos_t) * (1./np.cos(sensor_zenith_rad_p) + 1./np.cos(solar_zenith_rad_p))
     cos_xi_prime = np.cos(solar_zenith_rad_p)*np.cos(sensor_zenith_rad_p) + np.sin(solar_zenith_rad_p) * np.sin(sensor_zenith_rad_p) * np.cos(relative_azimuth)
 
-    import ipdb; ipdb.set_trace()
     F_1 = ((1. + cos_xi_prime) * 1./np.cos(sensor_zenith_rad_p) * 1./np.cos(solar_zenith_rad_p)) \
           /(1./np.cos(sensor_zenith_rad_p) + 1./np.cos(solar_zenith_rad_p) - V) \
           -2
@@ -61,6 +60,7 @@ def generate_coeff_table(refl, tch, shade, relobs):
 
     for _class in range(n_classes):
         subset = roughclass == _class
+        print(np.sum(subset))
         for _band in range(n_bands):
             coeff_mat[_class,_band,:] + calculate_coefficients(refl[subset,_band], relobs[subset,:])
 
@@ -75,18 +75,17 @@ def calculate_coefficients(refl, relobs):
 
     A = np.transpose(np.vstack([np.ones(F_1.shape), F_1, F_2]))
 
-    import ipdb; ipdb.set_trace()
-    coeff = np.linalg.lstsq(A, refl)
+    coeff, resid, rank, s = np.linalg.lstsq(A, refl)
     return coeff
 
 
 def separate_classes(ndvi, tch, shade):
 
     outclass = np.zeros(ndvi.shape[0])
-    outclass[shade == 0] = 0 #shaded
-    outclass[np.logical_and.reduce((tch > 2, shade == 1))] = 1 #sunlit tree
-    outclass[np.logical_and.reduce((tch < 2, shade == 1, ndvi > 0.2))] = 2 #sunlit short veg
-    outclass[np.logical_and.reduce((tch < 2, shade == 1, ndvi <= 0.2))] = 3 #sunlit short non-veg
+    outclass[np.logical_and.reduce((tch > 2, shade == 1))] = 0 #sunlit tree
+    outclass[np.logical_and.reduce((tch > 2, shade == 0))] = 1 #shaded tree
+    outclass[np.logical_and.reduce((tch <= 2, shade == 1))] = 2 #sunlit short veg
+    outclass[np.logical_and.reduce((tch <= 2, shade == 0))] = 3 #shaded short non-veg
 
     return outclass
 
