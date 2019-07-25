@@ -113,6 +113,7 @@ parser.add_argument('reflectance_file')
 parser.add_argument('obs_file')
 parser.add_argument('tch_file')
 parser.add_argument('shade_file')
+parser.add_argument('output_file')
 args = parser.parse_args()
 
 
@@ -151,8 +152,33 @@ for _row in tqdm(range(refl_set.RasterYSize),ncols=80):
 coeff_mat = generate_coeff_table(refl, tch, shade, obs[:,[4,2,1,3]])
 print(coeff_mat)
 
+driver = gdal.GetDriverByName('ENVI')
+driver.Register()
+outDataset = driver.Create(args.output_file,refl_set.RasterXSize,refl_set.RasterYSize,refl_set.RasterCount,gdal.GDT_Float32,options=['INTERLEAVE=BIL'])
+outDataset.SetGeoTransform(refl_set.GetGeoTransform())
+outDataset.SetProjection(refl_set.GetProjection())
+del outDataset
 
 
+
+# Step 2 - Apply the reference table
+for _row in tqdm(range(refl_set.RasterYSize),ncols=80):
+    loc_tch = np.transpose(np.squeeze(tch_set.ReadAsArray(0,_row,tch_set.RasterXSize,1)))
+    loc_refl = np.transpose(np.squeeze(refl_set.ReadAsArray(0,_row,refl_set.RasterXSize,1)))
+    loc_shade = np.transpose(np.squeeze(shade_set.ReadAsArray(0,_row,shade_set.RasterXSize,1)))
+    loc_obs = np.transpose(np.squeeze(obs_set.ReadAsArray(0,_row,obs_set.RasterXSize,1)))
+
+    rev_refl = apply_brdf_model(coeff_mat, loc_refl, loc_obs[4,2,1,3], loc_tch, loc_shade)
+    # x, b
+
+    rev_refl = np.transpose(rev_refl)
+    rev_refl = np.reshape(np.transpose(rev_refl), (0, rev_refl.shape[0],rev_refl.shape[1]))
+    # y, b, x
+
+
+    refl_memmap = np.memmap(args.output_file,mode='r+',shape=(refl_set.RasterXSize,refl_set.RasterYSize,refl_set.RasterCount),dtype=np.float32)
+    refl_memmap[_row:_row+1,...] = rev_refl
+    del refl_memmap
 
 
 
