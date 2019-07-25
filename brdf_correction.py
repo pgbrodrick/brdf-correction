@@ -39,18 +39,39 @@ def correction_components(solar_zenith_deg, sensor_zenith_deg, sensor_azimuth_de
     solar_zenith_rad_p = theta_prime(solar_zenith_rad)
     sensor_zenith_rad_p = theta_prime(sensor_zenith_rad)
 
-    D = np.sqrt(np.power(np.tan(solar_zenith_rad_p),2) + np.power(np.tan(sensor_zenith_rad_p),2) - 2*np.tan(sensor_zenith_rad_p)*np.tan(solar_zenith_rad_p)*np.cos(relative_azimuth))
-    cos_t = h_over_b * np.sqrt(np.power(D,2) + np.power(np.tan(solar_zenith_rad_p) * np.tan(sensor_zenith_rad_p) * np.sin(relative_azimuth),2)) / (1/np.cos(solar_zenith_rad_p) + 1/np.cos(sensor_zenith_rad_p))
+    sec_Tv = 1/np.cos(sensor_zenith_rad_p)
+    sec_Ts = 1/np.cos(solar_zenith_rad_p)
+    tan_Tv = 1/np.tan(sensor_zenith_rad_p)
+    tan_Ts = 1/np.tan(solar_zenith_rad_p)
+    cos_Tv = 1/np.cos(sensor_zenith_rad_p)
+    cos_Ts = 1/np.cos(solar_zenith_rad_p)
+    sin_Tv = 1/np.sin(sensor_zenith_rad_p)
+    sin_Ts = 1/np.sin(solar_zenith_rad_p)
+
+    cos_p = np.cos(relative_azimuth)
+    sin_p = np.sin(relative_azimuth)
+
+
+    #D = np.sqrt(np.power(np.tan(solar_zenith_rad_p),2) + np.power(np.tan(sensor_zenith_rad_p),2) - 2*np.tan(sensor_zenith_rad_p)*np.tan(solar_zenith_rad_p)*np.cos(relative_azimuth))
+    D = np.sqrt(np.power(tan_Ts,2) + np.power(tan_Tv,2) - 2*tan_Ts*tan_Tv*cos_p)
+
+    #cos_t = h_over_b * np.sqrt(np.power(D,2) + np.power(np.tan(solar_zenith_rad_p) * np.tan(sensor_zenith_rad_p) * np.sin(relative_azimuth),2)) / (1/np.cos(solar_zenith_rad_p) + 1/np.cos(sensor_zenith_rad_p))
+    cos_t = h_over_b * np.sqrt(np.power(D,2) + np.power(tan_Ts*tan_Tv*sin_p,2)) / (sec_Tv + sec_Ts)
     cos_t = np.min([cos_t, np.ones(cos_t.shape)],axis=0)
     t = np.arccos(cos_t)
     V = 1/np.pi * (t - np.sin(t)*cos_t) * (1./np.cos(sensor_zenith_rad_p) + 1./np.cos(solar_zenith_rad_p))
-    cos_xi_prime = np.cos(solar_zenith_rad_p)*np.cos(sensor_zenith_rad_p) + np.sin(solar_zenith_rad_p) * np.sin(sensor_zenith_rad_p) * np.cos(relative_azimuth)
+    #cos_xi_prime = np.cos(solar_zenith_rad_p)*np.cos(sensor_zenith_rad_p) + np.sin(solar_zenith_rad_p) * np.sin(sensor_zenith_rad_p) * np.cos(relative_azimuth)
+    cos_xi_prime = cos_Ts*cos_Tv + sin_Ts*sin_Tv*cos_p
+
 
     F_1 = ((1. + cos_xi_prime) * 1./np.cos(sensor_zenith_rad_p) * 1./np.cos(solar_zenith_rad_p)) \
           /(1./np.cos(sensor_zenith_rad_p) + 1./np.cos(solar_zenith_rad_p) - V) \
           -2
+    F_1 = (1+cos_xi_prime)*sec_Tv*sec_Ts / (sec_Tv + sec_Ts - V) - 2
 
-    F_2 = 4/(3*np.pi) * 1./(np.cos(solar_zenith_rad_p) + np.cos(sensor_zenith_rad_p)) * ( (np.pi/2. - np.arccos(cos_xi_prime)) * cos_xi_prime + np.sin(np.arccos(cos_xi_prime))) - 1./3.
+    #F_2 = 4/(3*np.pi) * 1./(np.cos(solar_zenith_rad_p) + np.cos(sensor_zenith_rad_p)) * ( (np.pi/2. - np.arccos(cos_xi_prime)) * cos_xi_prime + np.sin(np.arccos(cos_xi_prime))) - 1./3.
+    F_2 = 4/(3*np.pi) * 1./(np.sin(solar_zenith_rad) + np.cos(sensor_zenith_rad)) * ( (np.pi/2. - np.arccos(cos_xi_prime)) * cos_xi_prime + np.sin(np.arccos(cos_xi_prime))) - 1./3.
+
 
     return F_1, F_2
 
