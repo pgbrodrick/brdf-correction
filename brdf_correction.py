@@ -60,9 +60,8 @@ def generate_coeff_table(refl, tch, shade, relobs):
 
     for _class in range(n_classes):
         subset = roughclass == _class
-        print(np.sum(subset))
         for _band in range(n_bands):
-            coeff_mat[_class,_band,:] + calculate_coefficients(refl[subset,_band], relobs[subset,:])
+            coeff_mat[_class,_band,:] = calculate_coefficients(refl[subset,_band], relobs[subset,:])
 
     return coeff_mat
 
@@ -96,13 +95,14 @@ def apply_brdf_model(coef, refl, relobs, tch, shade):
     refF_1, refF_2 = correction_components(np.ones(relobs[:,0].shape)*40, np.zeros(relobs[:,0].shape), np.zeros(relobs[:,0].shape), np.zeros(relobs[:,0].shape))
     roughclass = separate_classes(get_ndvi(refl), tch, shade)
 
-
     for _class in range(n_classes):
         subset = roughclass == _class
         for _band in range(n_bands):
             modeled_r = coef[_class,_band,0] + F_1[subset] * coef[_class,_band,1] * F_2[subset]*coef[_class,_band,2]
             ref_r = coef[_class,_band,0] + refF_1[subset] * coef[_class,_band,1] * refF_2[subset]*coef[_class,_band,2]
-            refl[subset,_band] = refl[subset,_band] * ref_r / modeled_r
+            correction = refl[subset,_band] * ref_r / modeled_r
+            correction[np.isnan(correction)] = 0
+            refl[subset,_band] = correction
 
     return refl
 
@@ -169,16 +169,16 @@ for _row in tqdm(range(refl_set.RasterYSize),ncols=80):
     loc_refl = np.transpose(np.squeeze(refl_set.ReadAsArray(0,_row,refl_set.RasterXSize,1)))
     loc_shade = np.transpose(np.squeeze(shade_set.ReadAsArray(0,_row,shade_set.RasterXSize,1)))
     loc_obs = np.transpose(np.squeeze(obs_set.ReadAsArray(0,_row,obs_set.RasterXSize,1)))
-
-    rev_refl = apply_brdf_model(coeff_mat, loc_refl, loc_obs[4,2,1,3], loc_tch, loc_shade)
+        
+    rev_refl = apply_brdf_model(coeff_mat, loc_refl, loc_obs[:,[4,2,1,3]], loc_tch, loc_shade)
     # x, b
 
     rev_refl = np.transpose(rev_refl)
-    rev_refl = np.reshape(np.transpose(rev_refl), (0, rev_refl.shape[0],rev_refl.shape[1]))
+    rev_refl = np.reshape(rev_refl, (1, rev_refl.shape[0],rev_refl.shape[1]))
     # y, b, x
 
 
-    refl_memmap = np.memmap(args.output_file,mode='r+',shape=(refl_set.RasterXSize,refl_set.RasterYSize,refl_set.RasterCount),dtype=np.float32)
+    refl_memmap = np.memmap(args.output_file,mode='r+',shape=(refl_set.RasterYSize,refl_set.RasterCount,refl_set.RasterXSize),dtype=np.float32)
     refl_memmap[_row:_row+1,...] = rev_refl
     del refl_memmap
 
